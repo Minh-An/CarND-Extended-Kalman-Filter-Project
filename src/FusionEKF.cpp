@@ -36,6 +36,10 @@ FusionEKF::FusionEKF() {
    * Finish initializing the FusionEKF.
    */
 
+  // set measurement function matrix for laser
+  H_laser_ << 1, 0, 0, 0,
+              0, 1, 0, 0;
+
   // set the acceleration noise components
   // use noise_ax = 9 and noise_ay = 9 for your Q matrix.
   noise_ax = 9;
@@ -105,6 +109,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     return;
   }
 
+
   /**
    * Prediction
    */
@@ -126,15 +131,21 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   ekf_.Predict();
 
+
   /**
    * Update
    */
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+    ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
+    ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+    ekf_.H_ = H_laser_;
+    ekf_.R_ = R_laser_;
     ekf_.Update(measurement_pack.raw_measurements_);
   }
+
 
   // print the output
   cout << "x_ = " << ekf_.x_ << endl;
